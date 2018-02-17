@@ -45,20 +45,18 @@ class GypsyBoost:
             X (numpy array): array (n*m) with features
             y (numpy array): array (n,) with target
         """
-        X_train, X_val, y_train, y_val  = train_test_split(X, y, test_size=validation, shuffle=shuffle)
-        self.X_train = X_train
-        self.y_train = y_train
-        r = y_train.copy()
+        self.X_train, X_val, self.y_train, y_val  = train_test_split(X, y, test_size=validation, shuffle=shuffle)
+        r = self.y_train.copy()
         for i in range(n_estimators):
             regressor = self.estimator
-            regressor.fit(X_train, r)
+            regressor.fit(self.X_train, r)
             if len(self.ensemble) != 0:
                 gamma = float(minimize(self.__loss_wrap, 1, method='L-BFGS-B').x)
                 self.gammas.append(gamma)
             else:
                 self.gammas.append(1.0)
             self.ensemble.append(copy(regressor))
-            self.ens_pred = sum(gamma*estimator.predict(X_train) for estimator, gamma in zip(self.ensemble, self.gammas))
+            self.ens_pred = sum(gamma*estimator.predict(self.X_train) for estimator, gamma in zip(self.ensemble, self.gammas))
             r = -1*self.grad_loss(self.y_train, self.ens_pred)
             yield np.mean(self.loss(y_val, self.predict(X_val)))
             
@@ -84,4 +82,8 @@ class GypsyBoost:
             prediction += gamma*estimator.predict(X)
             
         return prediction
+
+
+
+
 
