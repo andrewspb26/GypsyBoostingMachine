@@ -35,7 +35,7 @@ class GypsyBoost:
         else:
             raise AssertionError('wrong arguments has been passed')
             
-    def grow_ensemble(self, n_estimators, X, y, validation=0.1, shuffle=True):
+    def grow_ensemble(self, n_estimators, X, y, validation=0.1, shuffle=True, ordering=False):
         
         """ this method build ensemble of estimators 
         passed in class constructor
@@ -45,11 +45,25 @@ class GypsyBoost:
             X (numpy array): array (n*m) with features
             y (numpy array): array (n,) with target
         """
+        
         self.X_train, X_val, self.y_train, y_val  = train_test_split(X, y, test_size=validation, shuffle=shuffle)
         r = self.y_train.copy()
+        
+        if ordering:
+            
+            chunk_length = self.X_train.shape[0] // n_estimators
+        
         for i in range(n_estimators):
+
             regressor = self.estimator
-            regressor.fit(self.X_train, r)
+
+            if ordering:
+                start = i*chunk_length
+                end = start + chunk_length
+                regressor.fit(self.X_train[start:end], r[start:end])
+            else:
+                regressor.fit(self.X_train, r)
+
             if len(self.ensemble) != 0:
                 gamma = float(minimize(self.__loss_wrap, 1, method='L-BFGS-B').x)
                 self.gammas.append(gamma)
