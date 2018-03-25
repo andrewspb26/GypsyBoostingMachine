@@ -59,7 +59,13 @@ class GypsyBoost:
 
             if ordering:
                 start = i*chunk_length
-                end = start + chunk_length
+                
+                if n_estimators - i != 1:
+                    end = start + chunk_length
+                    
+                else:
+                    end = self.X_train.shape[0]
+                    
                 regressor.fit(self.X_train[start:end], r[start:end])
             else:
                 regressor.fit(self.X_train, r)
@@ -67,11 +73,13 @@ class GypsyBoost:
             if len(self.ensemble) != 0:
                 gamma = float(minimize(self.__loss_wrap, 1, method='L-BFGS-B').x)
                 self.gammas.append(gamma)
+                
             else:
                 self.gammas.append(1.0)
             self.ensemble.append(copy(regressor))
             self.ens_pred = sum(gamma*estimator.predict(self.X_train) for estimator, gamma in zip(self.ensemble, self.gammas))
             r = -1*self.grad_loss(self.y_train, self.ens_pred)
+            
             yield np.mean(self.loss(y_val, self.predict(X_val)))
             
     def __loss_wrap(self, gamma):
@@ -96,8 +104,4 @@ class GypsyBoost:
             prediction += gamma*estimator.predict(X)
             
         return prediction
-
-
-
-
 
